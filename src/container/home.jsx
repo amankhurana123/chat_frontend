@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import "../styles.css";
 
 export default class Home extends Component {
-  componentWillMount() {
+  componentDidMount() {
     console.log("====================================");
     console.log();
     console.log("====================================");

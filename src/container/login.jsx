@@ -19,8 +19,8 @@ export default class Login extends Component {
       }
     };
   }
-  componentDidMount() {
-    if (localStorage.getItem("user.data")) {
+  componentWillMount() {
+    if (localStorage.getItem("user")) {
       this.props.history.push("/home");
       console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     }
