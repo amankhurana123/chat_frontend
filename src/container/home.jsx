@@ -13,19 +13,21 @@ export default class Home extends Component {
       name: "",
       email: "",
       toUser: "",
+      fromUser: "",
       startChating: false,
-      chatText: "",
-      startChatTextField: false
+      message: "",
+      startChatTextField: false,
+      chat: []
     };
   }
 
   componentWillMount = async () => {
     const user = localStorage.getItem("user");
+    this.setState({ fromUser: JSON.parse(user).data._id });
     if (!user) {
       this.props.history.push("/");
     } else {
       const params = encodeURI(JSON.stringify(JSON.parse(user).data._id));
-
       const options = {
         method: "get",
         url: "/user/getUser?params=" + params
@@ -45,43 +47,49 @@ export default class Home extends Component {
   };
   onHandleChangeState = (name, email, toUser, startChating) => {
     this.setState({ name, email, toUser, startChating });
-    const options ={
+    const { fromUser } = this.state;
+    const params = encodeURI(JSON.stringify({ fromUser, toUser }));
+    const options = {
       method: "get",
-      url: '/chat/'
-    }
+      url: "/chat/chatdata?params=" + params
+    };
     apiInstance(options)
-  .then(response=>{
-    console.log("responser>>>>>>>>>>>>>>>>>>>>>",response)
-    this.setState({startChatTextField : false, chatText: ""})
-    }).catch(error=>{
-    console.log("error",error)
-    })
-}
-  onChangeState=(event)=>{
-    this.setState({chatText: event.target.value})
-  }
-  chatMessages=()=>{
-    this.setState({startChatTextField : true})
-  const {chatText, toUser, }=this.state;
-  const fromUser= encodeURI(JSON.stringify(JSON.parse(localStorage("user")).data._id));
-  const headers = {
-    "content-type": "application/json",
-    Accept: "application/json"
+      .then(response => {
+        this.setState({ chat: response.data });
+      })
+      .catch(error => {
+        console.log("error", error);
+      });
   };
-  const options = {
-    method: "post",
-    url: "/chat/",
-    data: { chatText ,toUser,fromUser },
-    headers
+  onChangeState = event => {
+    this.setState({ message: event.target.value });
   };
-  apiInstance(options)
-  .then(response=>{
-    console.log("responser>>>>>>>>>>>>>>>>>>>>>",response)
-}).catch(error=>{
-  console.log("error",error)
-})
-}
+  chatMessages = () => {
+    this.setState({ startChatTextField: true });
+    const { message, toUser, fromUser } = this.state;
+    this.state.chat.push({ message, toUser, fromUser });
+    this.setState({});
+    const headers = {
+      "content-type": "application/json",
+      Accept: "application/json"
+    };
+    const options = {
+      method: "post",
+      url: "/chat/messages",
+      data: { message, toUser, fromUser },
+      headers
+    };
+    apiInstance(options)
+      .then(response => {
+        console.log("responser>>>>>>>>>>>>>>>>>>>>>", response);
+        this.setState({ startChatTextField: false });
+      })
+      .catch(error => {
+        console.log("error", error);
+      });
+  };
   render() {
+    console.log("this.state", this.state.chat);
     return (
       <div className="mainHomeContainer">
         <div className="header" />
@@ -96,7 +104,7 @@ export default class Home extends Component {
                     this.onHandleChangeState(
                       item.name,
                       item.email,
-                      item.toUser,
+                      item._id,
                       true
                     );
                   }}
@@ -132,11 +140,36 @@ export default class Home extends Component {
                 </div>
                 <div />
               </div>
-              <div className="rightBody">{this.state.startChatTextField && <div className="chat"><p>{this.state.chatText}</p></div>}</div>
+              <div className="rightBody">
+                {this.state.chat &&
+                  this.state.chat.map((item, index) => {
+                    return (
+                      <div
+                        className="chat"
+                        key={index}
+                        style={
+                          typeof item.fromUser._id !==
+                          typeof this.state.fromUser
+                            ? {
+                                backgroundColor: "lightblue",
+                                alignSelf: "flex-end"
+                              }
+                            : {}
+                        }
+                      >
+                        <p>{item.message}</p>
+                      </div>
+                    );
+                  })}
+              </div>
               <div className="rightFooter">
                 <div className="innerRightFooter">
-                  <textarea className="textarea" value={this.state.chatText} onChange={this.onChangeState}  />
-                  <div className="sendButton" onClick={this.chatMessages} >
+                  <textarea
+                    className="textarea"
+                    value={this.state.message}
+                    onChange={this.onChangeState}
+                  />
+                  <div className="sendButton" onClick={this.chatMessages}>
                     <Send className="send" />
                   </div>
                 </div>
