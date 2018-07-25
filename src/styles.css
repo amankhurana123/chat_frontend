@@ -238,3 +238,18 @@
   margin: 20px;
   color: #fff;
 }
+.chat {
+  display: flex;
+  height: 30px;
+  max-width: 80%;
+  justify-content: center;
+  background-color: antiquewhite;
+  margin: 20px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-radius: 10px
+}
+.chat p{
+  display: center;
+  align-self: center;
+}
