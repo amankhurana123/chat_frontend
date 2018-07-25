@@ -19,23 +19,27 @@ export default class Home extends Component {
 
   componentWillMount = async () => {
     const user = localStorage.getItem("user");
-    const params = encodeURI(JSON.stringify(JSON.parse(user).data._id));
+    if (!user) {
+      this.props.history.push("/");
+    } else {
+      const params = encodeURI(JSON.stringify(JSON.parse(user).data._id));
 
-    const options = {
-      method: "get",
-      url: "/user/getUser?params=" + params
-    };
-    apiInstance(options)
-      .then(response => {
-        this.setState({ user: response.data });
-        console.log("====================================");
-        console.log("response", this.state.user);
+      const options = {
+        method: "get",
+        url: "/user/getUser?params=" + params
+      };
+      apiInstance(options)
+        .then(response => {
+          this.setState({ user: response.data });
+          console.log("====================================");
+          console.log("response", this.state.user);
 
-        console.log("====================================");
-      })
-      .catch(error => {
-        console.log("error", error);
-      });
+          console.log("====================================");
+        })
+        .catch(error => {
+          console.log("error", error);
+        });
+    }
   };
   onHandleChangeState = (name, email, id, startChating) => {
     this.setState({ name, email, id, startChating });
