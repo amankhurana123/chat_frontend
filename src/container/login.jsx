@@ -20,8 +20,10 @@ export default class Login extends Component {
     };
   }
   componentDidMount() {
-    if (localStorage.getItem("user")) {
-      this.props.history.push("/home");
+    const user = localStorage.getItem("user");
+    if (user) {
+      const user_id = JSON.parse(user).data._id;
+      this.props.history.push("/home", { user_id });
     }
   }
   onChangeState = event => {
@@ -67,11 +69,10 @@ export default class Login extends Component {
       .then(response => {
         console.log("response", response);
         localStorage.setItem("user", JSON.stringify(response));
-        this.props.history.push("/home");
+        this.props.history.push("/home", { user_id: response._id });
       })
       .catch(error => {
         console.log("error", error);
-        this.props.history.push("/home");
       });
   };
   render() {

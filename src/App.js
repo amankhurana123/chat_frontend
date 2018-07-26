@@ -1,20 +1,28 @@
 import React, { Component } from "react";
 import { Route, Switch, withRouter } from "react-router-dom";
-import openSocket from "socket.io-client";
-import config from "./config";
+import { connectToSocket, disconnectSocket } from "./socket";
 import Login from "./container/login";
 import Home from "./container/home";
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      socket: {}
+    };
+  }
   componentWillMount() {
-    const socket = openSocket(config.sockerServerUrl);
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>", socket.sid);
+    connectToSocket();
+  }
+  componentWillUnmount() {
+    disconnectSocket();
   }
   render() {
     return (
       <Switch>
         <Route exact path="/" component={Login} />
         <Route exact path="/home" component={Home} />
+        {/* <Link to={{ pathname: "/home", state: { socket: "hello" } }} /> */}
       </Switch>
     );
   }

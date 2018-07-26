@@ -4,8 +4,9 @@ import ArrowBack from "@material-ui/icons/ArrowBack";
 import Send from "@material-ui/icons/Send";
 import { apiInstance } from "../api";
 import "../styles.css";
+import withSocket from "../component/withSocket";
 
-export default class Home extends Component {
+class Home extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -17,7 +18,9 @@ export default class Home extends Component {
       startChating: false,
       message: "",
       startChatTextField: false,
-      chat: []
+      chat: [],
+      socket: {},
+      chat1: []
     };
   }
 
@@ -81,15 +84,20 @@ export default class Home extends Component {
     };
     apiInstance(options)
       .then(response => {
-        console.log("responser>>>>>>>>>>>>>>>>>>>>>", response);
-        this.setState({ startChatTextField: false });
+        console.log("response >>>>>>>>>>>>>>>>>>>>>", response);
+        this.setState({ startChatTextField: false, message: "" });
       })
       .catch(error => {
         console.log("error", error);
       });
   };
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.socketData) {
+      this.state.chat.push(nextProps.socketData);
+      this.setState({});
+    }
+  }
   render() {
-    console.log("this.state", this.state.chat);
     return (
       <div className="mainHomeContainer">
         <div className="header" />
@@ -140,7 +148,27 @@ export default class Home extends Component {
                 </div>
                 <div />
               </div>
-              <div className="rightBody">
+              <div
+                className="rightBody"
+                onPointerUp={() => {
+                  setInterval(() => {
+                    if (this.state.chat.length - 6) {
+                      this.state.chat1.unshift(this.state.chat.pop());
+                      console.log(this.state.chat1);
+                      this.setState({});
+                    }
+                  }, 100);
+                }}
+                onPointerDown={() => {
+                  setInterval(() => {
+                    if (this.state.chat1.length != 0) {
+                      this.state.chat.push(this.state.chat1.pop());
+                      console.log(this.state.chat1);
+                      this.setState({});
+                    }
+                  }, 100);
+                }}
+              >
                 {this.state.chat &&
                   this.state.chat.map((item, index) => {
                     return (
@@ -148,8 +176,7 @@ export default class Home extends Component {
                         className="chat"
                         key={index}
                         style={
-                          typeof item.fromUser._id !==
-                          typeof this.state.fromUser
+                          item.fromUser._id === this.state.fromUser
                             ? {
                                 backgroundColor: "lightblue",
                                 alignSelf: "flex-end"
@@ -177,7 +204,7 @@ export default class Home extends Component {
             </div>
           ) : (
             <div className="rightContainer">
-              <div className="imageRightContainser">
+              <div className="imageRightContainer">
                 <img src={require("./../image/chat1.png")} alt="user" />
               </div>
             </div>
@@ -185,5 +212,13 @@ export default class Home extends Component {
         </div>
       </div>
     );
+  }
+}
+
+export default class HomeWrapper extends Component {
+  render() {
+    const { user_id } = this.props.location.state;
+    const HomeComponent = withSocket(`chat_${user_id}`, Home);
+    return <HomeComponent {...this.props} />;
   }
 }
