@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import { capitalize } from "lodash";
+import DropZone from "react-dropzone";
 import ArrowBack from "@material-ui/icons/ArrowBack";
+import AttachFile from "@material-ui/icons/AttachFile";
 import Send from "@material-ui/icons/Send";
 import { apiInstance } from "../api";
 import "../styles.css";
@@ -20,10 +22,11 @@ class Home extends Component {
       startChatTextField: false,
       chat: [],
       socket: {},
-      chat1: []
+      chat1: [],
+      height: 0,
+      fileIsSend: []
     };
   }
-
   componentWillMount = async () => {
     const user = localStorage.getItem("user");
     this.setState({ fromUser: JSON.parse(user).data._id });
@@ -59,6 +62,10 @@ class Home extends Component {
     apiInstance(options)
       .then(response => {
         this.setState({ chat: response.data });
+        this.setState({
+          height: this.state.chat.length ? this.state.chat.length : 0
+        });
+        this.onHandleChange(this.state.height * 74);
       })
       .catch(error => {
         console.log("error", error);
@@ -72,6 +79,10 @@ class Home extends Component {
     const { message, toUser, fromUser } = this.state;
     this.state.chat.push({ message, toUser, fromUser });
     this.setState({});
+    this.setState({
+      height: this.state.chat.length
+    });
+    this.onHandleChange(this.state.height * 74);
     const headers = {
       "content-type": "application/json",
       Accept: "application/json"
@@ -85,7 +96,7 @@ class Home extends Component {
     apiInstance(options)
       .then(response => {
         console.log("response >>>>>>>>>>>>>>>>>>>>>", response);
-        this.setState({ startChatTextField: false, message: "" });
+        this.setState({ message: "" });
       })
       .catch(error => {
         console.log("error", error);
@@ -95,9 +106,51 @@ class Home extends Component {
     if (nextProps.socketData) {
       this.state.chat.push(nextProps.socketData);
       this.setState({});
+      this.setState({ height: this.state.chat.length });
+      this.onHandleChange(this.state.height * 74);
     }
   }
+  onHandleChange = height => {
+    console.log(
+      height,
+      document.getElementsByClassName("rightBody")[0].scrollHeight
+    );
+
+    return document.getElementsByClassName("rightBody")[0].scrollTo(0, height);
+  };
+  onDrop = (acceptedFiles, rejectedFiles) => {
+    console.log("accpetedFiles", acceptedFiles[0]);
+    console.log("rejectedFiles", rejectedFiles);
+    let fileIsSend = this.state.fileIsSend;
+    fileIsSend.push(acceptedFiles);
+    this.setState({ acceptedFiles });
+    let data = new FormData();
+    data.append("message", acceptedFiles[0]);
+    data.append("fromUser", this.state.fromUser);
+    data.append("toUser", this.state.toUser);
+    console.log("data", data);
+    const headers = {
+      "content-type": "multipart/form-data",
+      Accept: "application/json",
+      "Access-Control-Allow-Origin": "*"
+    };
+    const options = {
+      method: "post",
+      url: "/chat/messages",
+      data,
+      headers
+    };
+    console.log("options", options);
+    apiInstance(options)
+      .then(response => {
+        console.log("response", response);
+      })
+      .catch(error => {
+        console.log("error", error);
+      });
+  };
   render() {
+    console.log(this.state.chat);
     return (
       <div className="mainHomeContainer">
         <div className="header" />
@@ -148,27 +201,7 @@ class Home extends Component {
                 </div>
                 <div />
               </div>
-              <div
-                className="rightBody"
-                onPointerUp={() => {
-                  setInterval(() => {
-                    if (this.state.chat.length - 6) {
-                      this.state.chat1.unshift(this.state.chat.pop());
-                      console.log(this.state.chat1);
-                      this.setState({});
-                    }
-                  }, 100);
-                }}
-                onPointerDown={() => {
-                  setInterval(() => {
-                    if (this.state.chat1.length != 0) {
-                      this.state.chat.push(this.state.chat1.pop());
-                      console.log(this.state.chat1);
-                      this.setState({});
-                    }
-                  }, 100);
-                }}
-              >
+              <div className="rightBody">
                 {this.state.chat &&
                   this.state.chat.map((item, index) => {
                     return (
@@ -191,6 +224,14 @@ class Home extends Component {
               </div>
               <div className="rightFooter">
                 <div className="innerRightFooter">
+                  <AttachFile className="attachFile" />
+                  <DropZone
+                    className="dropzone"
+                    onDrop={files => {
+                      this.onDrop(files);
+                    }}
+                  />
+
                   <textarea
                     className="textarea"
                     value={this.state.message}

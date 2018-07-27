@@ -189,8 +189,7 @@
   height: 440px;
   width: auto;
   flex-flow: column nowrap;
-  overflow-y: scroll;
-  justify-content: flex-end;
+  overflow-y: auto;
 }
 .rightFooter {
   display: flex;
@@ -251,4 +250,23 @@
   margin: 20px;
   padding: 8px 10px;
   border-radius: 10px;
+}
+.dropzone {
+  display: flex;
+  align-self: center;
+  margin-left: 10px;
+
+  width: 40px;
+  height: 40px;
+  z-index: 0;
+  position: absolute;
+}
+.attachFile {
+  display: flex;
+  align-self: center;
+  margin-left: 20px;
+  width: 40px;
+  height: 40px;
+  position: absolute;
+  z-index: 1;
 }
