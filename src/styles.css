@@ -270,3 +270,10 @@
   position: absolute;
   z-index: 1;
 }
+.image {
+  width: 300px;
+  height: 400px;
+  border: 1px solid lightgrey;
+  margin: 20px;
+  padding: 0px;
+}
