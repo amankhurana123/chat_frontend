@@ -20,7 +20,7 @@ class Home extends Component {
       fromUser: "",
       startChating: false,
       message: "",
-      startChatTextField: false,
+      scrollPage: false,
       chat: [],
       socket: {},
       height: 0,
@@ -49,10 +49,6 @@ class Home extends Component {
       apiInstance(options)
         .then(response => {
           this.setState({ user: response.data });
-          console.log("====================================");
-          console.log("response", this.state.user);
-
-          console.log("====================================");
         })
         .catch(error => {
           console.log("error", error);
@@ -60,14 +56,15 @@ class Home extends Component {
     }
   };
   onHandleChangeState = (name, email, toUser, startChating) => {
-    // this.setState({ name, email, toUser, startChating });
     let state = this.state;
     state.name = name;
     state.email = email;
     state.toUser = toUser;
-    state.height = 0;
+    state.top = 0;
     state.chat = [];
     state.startChating = startChating;
+    state.scrollPage = false;
+    state.option.skip = 0;
     this.setState({});
     this.getChatMessages();
   };
@@ -82,26 +79,31 @@ class Home extends Component {
     apiInstance(options)
       .then(response => {
         if (response.data) {
-          this.state.chat = this.state.chat.concat(response.data);
-        }
+          response.data.map(item => {
+            return this.state.chat.unshift(item);
+          });
 
-        this.setState({
-          height: this.state.chat.length ? this.state.chat.length : 0
-        });
-        this.onHandleChange(this.state.height * 74);
+          this.setState({
+            height: this.state.chat.length ? this.state.chat.length : 0
+          });
+          this.onHandleChange();
+        }
       })
       .catch(error => {
         console.log("error", error);
       });
   };
   scrollPage = () => {
-    if (document.getElementsByClassName("rightBody")[0].scrollTop == 0) {
+    if (document.getElementsByClassName("rightBody")[0].scrollTop === 0) {
       if (
         this.state.option.skip + this.state.option.limit <=
         this.state.height
       ) {
         this.state.option.skip += this.state.option.limit;
-        this.setState({});
+        this.setState({ scrollPage: true });
+        this.setState({
+          top: document.getElementsByClassName("rightBody")[0].scrollHeight
+        });
         this.getChatMessages();
       }
     }
@@ -110,11 +112,12 @@ class Home extends Component {
     this.setState({ message: event.target.value });
   };
   chatMessages = () => {
-    this.setState({ startChatTextField: true });
     const { message, toUser, fromUser } = this.state;
     this.state.chat.length >= 10 && this.state.chat.shift();
     this.state.chat.push({ message, toUser, fromUser });
+    this.state.scrollPage = false;
     this.setState({});
+    this.onHandleChange();
     const headers = {
       "content-type": "application/json",
       Accept: "application/json"
@@ -136,17 +139,27 @@ class Home extends Component {
   };
   componentWillReceiveProps(nextProps) {
     if (nextProps.socketData) {
-      this.state.chat.shift();
-      this.state.chat.unshift(nextProps.socketData);
+      if (this.state.chat.length >= 10) {
+        this.state.chat.shift();
+      }
+      this.state.chat.push(nextProps.socketData);
+      this.state.scrollPage = false;
       this.setState({});
+      this.onHandleChange();
     }
   }
-  onHandleChange = height => {
-    return (document.getElementsByClassName(
-      "rightBody"
-    )[0].scrollTop = document.getElementsByClassName(
-      "rightBody"
-    )[0].scrollHeight);
+  onHandleChange = () => {
+    if (this.state.scrollPage) {
+      return (document.getElementsByClassName("rightBody")[0].scrollTop =
+        document.getElementsByClassName("rightBody")[0].scrollHeight -
+        this.state.top);
+    } else {
+      return (document.getElementsByClassName(
+        "rightBody"
+      )[0].scrollTop = document.getElementsByClassName(
+        "rightBody"
+      )[0].scrollHeight);
+    }
   };
 
   onDrop = (acceptedFiles, rejectedFiles) => {
@@ -159,11 +172,9 @@ class Home extends Component {
     data.append("message", acceptedFiles[0]);
     data.append("fromUser", this.state.fromUser);
     data.append("toUser", this.state.toUser);
-    console.log("data", data);
     const headers = {
       "content-type": "multipart/form-data",
-      Accept: "application/json",
-      "Access-Control-Allow-Origin": "*"
+      Accept: "application/json"
     };
     const options = {
       method: "post",
@@ -171,11 +182,14 @@ class Home extends Component {
       data,
       headers
     };
-    console.log("options", options);
     apiInstance(options)
       .then(response => {
         console.log("response", response.data);
-        this.state.chat.unshift(response.data);
+
+        this.state.chat.push(response.data);
+        this.state.scrollPage = false;
+        this.setState({});
+        this.onHandleChange();
       })
       .catch(error => {
         console.log("error", error);
@@ -210,6 +224,7 @@ class Home extends Component {
       return <p>{message}</p>;
     }
   };
+
   render() {
     return (
       <div className="mainHomeContainer">
@@ -262,19 +277,20 @@ class Home extends Component {
                 <div />
               </div>
               <div className="rightBody" onScroll={this.scrollPage}>
-                {this.state.chat.length !== 0 &&
-                  this.state.chat.reverse().map((item, index) => {
+                {this.state.chat &&
+                  this.state.chat.map((item, index) => {
                     return (
                       <div
                         className="chat"
                         key={index}
                         style={
-                          item.fromUser._id === this.state.fromUser
-                            ? {
+                          (item.toUser._id && item.toUser._id) ===
+                          this.state.fromUser
+                            ? {}
+                            : {
                                 backgroundColor: "lightblue",
                                 alignSelf: "flex-end"
                               }
-                            : {}
                         }
                       >
                         {this.setMessage(item.message)}
@@ -294,10 +310,9 @@ class Home extends Component {
                   >
                     <AttachFile className="attachFile" />
                   </DropZone>
-                  <input
+                  <textarea
                     type="text"
                     className="textarea"
-                    name="message"
                     value={this.state.message}
                     onChange={this.onChangeState}
                   />
